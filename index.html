@@ -130,9 +130,39 @@ body{background:radial-gradient(700px 380px at 15% -80px,#ff6a0026,transparent 7
 .card .btn{background:linear-gradient(135deg,var(--c),color-mix(in srgb,var(--c) 55%,#000));box-shadow:0 6px 18px color-mix(in srgb,var(--c) 35%,transparent)}
 footer{text-align:center;color:var(--mut);font-size:12px;margin-top:34px;padding-top:18px;border-top:1px solid var(--line)}
 @media(max-width:420px){.steps{grid-template-columns:repeat(2,1fr)}}
+#gate{position:fixed;inset:0;z-index:60;background:radial-gradient(700px 380px at 15% -80px,#ff6a0026,transparent 70%),radial-gradient(800px 420px at 90% -120px,#6d4aff26,transparent 70%),var(--bg);display:flex;align-items:center;justify-content:center;padding:20px}
+#gate.off{display:none}
+.gbox{background:var(--card);border:1px solid var(--line);border-radius:22px;padding:28px 22px;width:100%;max-width:380px;text-align:center}
+.gbox .lx{width:56px;height:56px;border-radius:16px;font-size:20px;margin:0 auto 14px}
+.gbox h1{font-size:24px;letter-spacing:1px}
+.gbox p{color:var(--mut);font-size:14px;margin:8px 0 20px;line-height:1.5}
+.gbtn{display:flex;align-items:center;justify-content:center;gap:12px;width:100%;background:#fff;color:#1f1f1f;border:0;border-radius:12px;padding:13px;font-size:15px;font-weight:600;cursor:pointer}
+.gbtn svg{width:20px;height:20px}
+.gbtn:disabled{opacity:.6}
+.gerr{color:#f87171;font-size:13px;margin-top:12px;min-height:16px;line-height:1.4}
+.ghint{color:var(--mut);font-size:12px;margin-top:14px;line-height:1.4}
+.ucard{display:flex;align-items:center;gap:10px;background:var(--card2);border:1px solid var(--line);border-radius:14px;padding:10px;margin-bottom:6px}
+.ucard img{width:38px;height:38px;border-radius:50%;flex:none}
+.ucard div{min-width:0}
+.ucard b,.ucard small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.ucard b{font-size:14px}.ucard small{color:var(--mut);font-size:12px}
 </style>
 </head>
 <body>
+<div id="gate">
+  <div class="gbox">
+    <span class="lx">LX</span>
+    <h1>LUA-XIT STORE</h1>
+    <p>Para comprar y ver tus pedidos, inicia sesión con tu cuenta de Google.</p>
+    <div id="gLoad" class="ghint">Cargando...</div>
+    <button class="gbtn" id="gBtn" style="display:none" onclick="entrarGoogle()">
+      <svg viewBox="0 0 48 48"><path fill="#EA4335" d="M24 9.5c3.54 0 6.71 1.22 9.21 3.6l6.85-6.85C35.9 2.38 30.47 0 24 0 14.62 0 6.51 5.38 2.56 13.22l7.98 6.19C12.43 13.72 17.74 9.5 24 9.5z"/><path fill="#4285F4" d="M46.98 24.55c0-1.57-.15-3.09-.38-4.55H24v9.02h12.94c-.58 2.96-2.26 5.48-4.78 7.18l7.73 6c4.51-4.18 7.09-10.36 7.09-17.65z"/><path fill="#FBBC05" d="M10.53 28.59c-.48-1.45-.76-2.99-.76-4.59s.27-3.14.76-4.59l-7.98-6.19C.92 16.46 0 20.12 0 24c0 3.88.92 7.54 2.56 10.78l7.97-6.19z"/><path fill="#34A853" d="M24 48c6.48 0 11.93-2.13 15.89-5.81l-7.73-6c-2.15 1.45-4.92 2.3-8.16 2.3-6.26 0-11.57-4.22-13.47-9.91l-7.98 6.19C6.51 42.62 14.62 48 24 48z"/></svg>
+      Continuar con Google
+    </button>
+    <div class="gerr" id="gErr"></div>
+    <div class="ghint">Si no se abre Google, abre esta página en Chrome o Safari (no desde WhatsApp o Instagram).</div>
+  </div>
+</div>
 <div class="bar"><button class="burger" onclick="menu(true)" aria-label="Abrir menú"><i></i><i></i><i></i></button><span class="lx">LX</span><b>LUA-XIT STORE</b></div>
 <header class="hero">
   <div class="pill">⚡ Entrega rápida de keys</div>
@@ -181,12 +211,14 @@ footer{text-align:center;color:var(--mut);font-size:12px;margin-top:34px;padding
 <div class="ov" id="ov" onclick="menu(false)"></div>
 <aside class="drawer" id="drawer">
   <div class="dh"><div style="display:flex;align-items:center;gap:10px"><span class="lx">LX</span><b>LUA-XIT STORE</b></div><button onclick="menu(false)">×</button></div>
+  <div class="ucard" id="ucard"></div>
   <div class="dsec">Productos</div>
   <button class="ditem" onclick="irProductos()">🛍️ Todos los productos</button>
   <div id="dprod"></div>
   <button class="ditem" onclick="abrirPedidos()">📦 Pedidos</button>
   <div class="dsec">Ayuda</div>
   <button class="ditem" onclick="abrirSoporte()">🛟 Soporte</button>
+  <button class="ditem" onclick="salir()">🚪 Cerrar sesión</button>
 </aside>
 
 <div class="modal" id="ped">
@@ -224,6 +256,8 @@ footer{text-align:center;color:var(--mut);font-size:12px;margin-top:34px;padding
   </div>
 </div>
 
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-auth-compat.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4.4.1/dist/email.min.js"></script>
 <script>
 /* ================= CONFIGURACIÓN ================= */
@@ -411,18 +445,19 @@ function codigo(){
   const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = crypto.getRandomValues(new Uint8Array(8));
   return "ORD-" + [...r].map(x=>a[x%a.length]).join("");
 }
-async function fb(path, method="GET", body){
-  const r = await fetch(FIREBASE_URL+path+".json", {method, headers:{"Content-Type":"application/json"}, body: body===undefined?undefined:JSON.stringify(body)});
+async function fb(path, method="GET", body, tk){
+  const r = await fetch(FIREBASE_URL+path+".json"+(tk?"?auth="+tk:""), {method, headers:{"Content-Type":"application/json"}, body: body===undefined?undefined:JSON.stringify(body)});
   if(!r.ok) throw new Error("Firebase "+r.status);
   return r.json();
 }
-function misCodigos(){ try{ return JSON.parse(localStorage.getItem("misPedidos")||"[]"); }catch(e){ return []; } }
-function guardarCodigo(c){ try{ const l = misCodigos().filter(x=>x!==c); l.unshift(c); localStorage.setItem("misPedidos", JSON.stringify(l.slice(0,30))); }catch(e){} }
+function misCodigos(){ try{ return JSON.parse(localStorage.getItem(clavePed())||"[]"); }catch(e){ return []; } }
+function guardarCodigo(c){ try{ const l = misCodigos().filter(x=>x!==c); l.unshift(c); localStorage.setItem(clavePed(), JSON.stringify(l.slice(0,30))); }catch(e){} }
 async function registrar(orden, contacto){
   guardarCodigo(orden);
   try{
-    await fb("/orders/"+orden, "PUT", {producto:cur.p.nombre, dias:cur.dur, usd:cur.usd, metodo:metodo.nombre, estado:"pendiente", creado:Date.now()});
-    await fb("/contactos/"+orden, "PUT", contacto.slice(0,120));
+    const t = await usuario.getIdToken();
+    await fb("/orders/"+orden, "PUT", {producto:cur.p.nombre, dias:cur.dur, usd:cur.usd, metodo:metodo.nombre, estado:"pendiente", creado:Date.now(), uid:usuario.uid}, t);
+    await fb("/contactos/"+orden, "PUT", contacto.slice(0,120), t);
   }catch(e){ console.warn("Firebase:", e); }
 }
 
@@ -457,6 +492,41 @@ async function agregarCodigo(){
     guardarCodigo(c); $("pCod").value = ""; cargarPedidos();
   }catch(e){ m.textContent = "No se pudo consultar. Inténtalo de nuevo."; }
 }
+/* ===== Inicio de sesión con Google ===== */
+let usuario = null;
+function clavePed(){ return "misPedidos" + (usuario ? ":" + usuario.uid : ""); }
+const GERR = {
+  "auth/unauthorized-domain":"Este dominio no está autorizado en Firebase (Authentication → Configuración → Dominios autorizados).",
+  "auth/operation-not-supported-in-this-environment":"Abre la página desde su dirección web (https), no desde un archivo descargado.",
+  "auth/popup-blocked":"Tu navegador bloqueó la ventana de Google. Permite las ventanas emergentes e inténtalo de nuevo.",
+  "auth/network-request-failed":"Sin conexión. Inténtalo de nuevo.",
+  "auth/operation-not-allowed":"El inicio de sesión con Google no está activado en Firebase."
+};
+function gerr(t){ $("gErr").textContent = t || ""; }
+function pintarUsuario(){
+  const u = usuario; if(!u) return;
+  $("ucard").innerHTML = (u.photoURL ? `<img src="${esc(u.photoURL)}" alt="">` : `<span class="lx">${esc((u.displayName||u.email||"U")[0].toUpperCase())}</span>`)
+    + `<div><b>${esc(u.displayName||"Mi cuenta")}</b><small>${esc(u.email||"")}</small></div>`;
+  if(!$("contacto").value) $("contacto").value = u.email || "";
+}
+if(typeof firebase === "undefined"){
+  $("gLoad").style.display = "none";
+  gerr("No se pudo cargar el inicio de sesión. Revisa tu conexión y recarga la página.");
+}else{
+  firebase.initializeApp({apiKey:"AIzaSyBQcMOKEh9pmthGNbyJtcHJvIMg-7fG7Vc", authDomain:"lua-xit-store.firebaseapp.com", projectId:"lua-xit-store"});
+  firebase.auth().onAuthStateChanged(u => {
+    usuario = u; $("gLoad").style.display = "none";
+    if(u){ $("gate").classList.add("off"); pintarUsuario(); }
+    else{ $("contacto").value = ""; comprobante = null; $("gate").classList.remove("off"); $("gBtn").style.display = "flex"; }
+  });
+}
+async function entrarGoogle(){
+  gerr(""); const b = $("gBtn"); b.disabled = true;
+  try{ await firebase.auth().signInWithPopup(new firebase.auth.GoogleAuthProvider()); }
+  catch(e){ if(e.code!=="auth/popup-closed-by-user" && e.code!=="auth/cancelled-popup-request") gerr(GERR[e.code] || "No se pudo iniciar sesión ("+(e.code||e.message)+")."); }
+  b.disabled = false;
+}
+function salir(){ menu(false); cerrar(); firebase.auth().signOut(); }
 render();
 </script>
 </body>
