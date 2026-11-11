@@ -10,7 +10,7 @@
 body{background:radial-gradient(900px 400px at 50% -100px,#1b2140 0,transparent 70%),var(--bg);color:var(--txt);font-family:system-ui,-apple-system,Segoe UI,Roboto,sans-serif;padding:18px 14px 40px;max-width:980px;margin:auto}
 header{text-align:center;margin:10px 0 22px}
 header h1{font-size:28px;letter-spacing:.3px}
-header p{color:var(--mut);font-size:14px;margin-top:6px}
+header p{color:var(--mut);font-size:14px;margin-top:6px
 .steps{display:flex;justify-content:center;gap:8px;flex-wrap:wrap;margin-top:14px;font-size:12px;color:var(--mut)}
 .steps span{background:var(--card);border:1px solid var(--line);border-radius:99px;padding:5px 11px}
 .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(270px,1fr));gap:16px}
@@ -146,6 +146,11 @@ footer{text-align:center;color:var(--mut);font-size:12px;margin-top:34px;padding
 .ucard div{min-width:0}
 .ucard b,.ucard small{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .ucard b{font-size:14px}.ucard small{color:var(--mut);font-size:12px}
+.gift{background:linear-gradient(135deg,#ff6a0026,#ff2d6f26);border:1px solid #ff6a0066;margin-top:6px;font-weight:600}
+.gh{background:linear-gradient(135deg,#ff6a00,#ff2d6f);border-radius:16px;padding:18px;text-align:center;margin:22px 0 14px;color:#fff;box-shadow:0 8px 24px #ff6a0044}
+.gh .big{font-size:36px}
+.gh b{display:block;font-size:19px;margin-top:4px}
+.gh span{font-size:13px;opacity:.92}
 </style>
 </head>
 <body>
@@ -212,10 +217,10 @@ footer{text-align:center;color:var(--mut);font-size:12px;margin-top:34px;padding
 <aside class="drawer" id="drawer">
   <div class="dh"><div style="display:flex;align-items:center;gap:10px"><span class="lx">LX</span><b>LUA-XIT STORE</b></div><button onclick="menu(false)">×</button></div>
   <div class="ucard" id="ucard"></div>
-  <div class="dsec">Productos</div>
+  <div class="dsec">Menú</div>
   <button class="ditem" onclick="irProductos()">🛍️ Todos los productos</button>
-  <div id="dprod"></div>
   <button class="ditem" onclick="abrirPedidos()">📦 Pedidos</button>
+  <button class="ditem gift" onclick="abrirGratis()">🎁 Key gratis 24h · HOLO-VIP</button>
   <div class="dsec">Ayuda</div>
   <button class="ditem" onclick="abrirSoporte()">🛟 Soporte</button>
   <button class="ditem" onclick="salir()">🚪 Cerrar sesión</button>
@@ -230,6 +235,13 @@ footer{text-align:center;color:var(--mut);font-size:12px;margin-top:34px;padding
     <label>¿Compraste desde otro dispositivo? Agrega tu código</label>
     <div style="display:flex;gap:8px"><input type="text" id="pCod" placeholder="ORD-XXXXXXXX" autocapitalize="characters"><button class="btn" style="width:auto;padding:0 16px" onclick="agregarCodigo()">Agregar</button></div>
     <div class="msg err" id="pMsg"></div>
+  </div>
+</div>
+
+<div class="modal" id="gra">
+  <div class="box" style="--c:#ff6a00">
+    <button class="x" onclick="cerrarGratis()">×</button>
+    <div id="gBody"></div>
   </div>
 </div>
 
@@ -396,7 +408,6 @@ async function enviar(){
   }
 }
 /* ===== Menú ===== */
-$("dprod").innerHTML = PRODUCTOS.map(p=>`<button class="ditem" onclick="irA('${p.id}')"><i style="background:${p.c}"></i>${p.nombre}</button>`).join("");
 function menu(on){ $("drawer").classList.toggle("on",on); $("ov").classList.toggle("on",on); }
 function irProductos(){ menu(false); window.scrollTo({top:0,behavior:"smooth"}); }
 function irA(id){
@@ -527,6 +538,60 @@ async function entrarGoogle(){
   b.disabled = false;
 }
 function salir(){ menu(false); cerrar(); firebase.auth().signOut(); }
+/* ===== Key gratis ===== */
+const GRATIS = {producto:"HOLO-VIP", duracion:"24 horas"};
+const cabGratis = () => `<div class="gh"><div class="big">🎁</div><b>Key gratis de ${GRATIS.duracion}</b><span>${GRATIS.producto} · para nuevos usuarios</span></div>`;
+function codGratis(){
+  const a = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789", r = crypto.getRandomValues(new Uint8Array(6));
+  return "GR-" + [...r].map(x=>a[x%a.length]).join("");
+}
+function msgGratis(g){
+  return "🎁 *SOLICITUD DE KEY GRATIS* 🎁\n━━━━━━━━━━━━━━\n✨ LUA-XIT STORE\n\n👤 Nombre: "+(usuario.displayName||"Nuevo usuario")+"\n🎮 Producto: "+g.producto+"\n⏱️ Key gratis: "+g.duracion+"\n🧾 Código: "+g.codigo+"\n📱 Mi WhatsApp: "+g.contacto+"\n━━━━━━━━━━━━━━\n\nHola 👋 soy nuevo usuario y quisiera solicitar mi key gratis de prueba de "+g.producto+". ¡Muchas gracias! 💜";
+}
+const waGratis = g => SOPORTE_WA + "?text=" + encodeURIComponent(msgGratis(g));
+function abrirGratis(){ menu(false); $("gra").classList.add("on"); cargarGratis(); }
+function cerrarGratis(){ $("gra").classList.remove("on"); }
+async function cargarGratis(){
+  const box = $("gBody"); box.innerHTML = cabGratis() + '<p class="hint">Cargando...</p>';
+  try{
+    const t = await usuario.getIdToken();
+    const g = await fb("/gratis/"+usuario.uid, "GET", undefined, t);
+    box.innerHTML = g ? vistaGratis(g) : vistaFormGratis();
+  }catch(e){ box.innerHTML = cabGratis() + '<div class="msg err">No se pudo consultar. Inténtalo de nuevo.</div><button class="btn ghost" style="margin-top:10px" onclick="cargarGratis()">↻ Reintentar</button>'; }
+}
+function vistaFormGratis(){
+  return cabGratis() + `<p class="hint" style="margin-bottom:6px">Una key de prueba por cuenta. Escribe el WhatsApp donde quieres recibirla y envía tu solicitud.</p>
+    <label>Tu número de WhatsApp (con código de país)</label>
+    <input type="text" id="gNum" inputmode="tel" placeholder="+57 300 000 0000">
+    <div class="msg err" id="gMsg"></div>
+    <button class="btn" id="gSend" style="margin-top:12px" onclick="pedirGratis()">🎁 Solicitar key gratis</button>`;
+}
+function vistaGratis(g){
+  const e = ESTADO[g.estado] || ESTADO.pendiente;
+  const nota = g.estado==="aceptado" ? "¡Aprobada! Te enviamos tu key y el archivo a tu WhatsApp "+esc(g.contacto)+"."
+    : g.estado==="rechazado" ? "No pudimos aprobar tu solicitud. Si crees que es un error, escríbenos desde Soporte."
+    : "Recibimos tu solicitud. Para acelerar la respuesta, toca el botón verde y envía el mensaje por WhatsApp.";
+  return cabGratis() + `<div class="pcard"><div class="pt"><b>${esc(g.codigo)}</b><span class="badge" style="--b:${e[2]}">${e[0]} ${e[1]}</span></div>
+      <div class="ps">${esc(g.producto)} · ${esc(g.duracion)}</div><div class="pn">${nota}</div></div>
+    ${g.estado==="pendiente" ? `<a class="btn" style="display:block;text-align:center;text-decoration:none;background:#22c55e;margin-top:10px" href="${waGratis(g)}" target="_blank" rel="noopener">💬 Enviar solicitud por WhatsApp</a>` : ""}
+    <button class="btn ghost" style="margin-top:10px" onclick="cargarGratis()">↻ Actualizar</button>`;
+}
+async function pedirGratis(){
+  const m = $("gMsg"); m.textContent = "";
+  let d = $("gNum").value.replace(/\D/g,"");
+  if(d.length===10 && d[0]==="3") d = "57"+d;
+  if(d.length<8 || d.length>15){ m.textContent = "Escribe un número válido con código de país."; return; }
+  const b = $("gSend"); b.disabled = true; b.textContent = "Enviando...";
+  const g = {codigo:codGratis(), producto:GRATIS.producto, duracion:GRATIS.duracion, contacto:"+"+d, estado:"pendiente", creado:Date.now()};
+  try{
+    const t = await usuario.getIdToken();
+    const ya = await fb("/gratis/"+usuario.uid, "GET", undefined, t);
+    if(ya){ cargarGratis(); return; }
+    await fb("/gratis/"+usuario.uid, "PUT", g, t);
+    $("gBody").innerHTML = vistaGratis(g);
+    try{ window.open(waGratis(g), "_blank"); }catch(e){}
+  }catch(e){ m.textContent = "No se pudo enviar la solicitud. Inténtalo de nuevo."; b.disabled = false; b.textContent = "🎁 Solicitar key gratis"; }
+}
 render();
 </script>
 </body>
